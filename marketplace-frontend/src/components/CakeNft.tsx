@@ -10,7 +10,7 @@ import {
     useReadContract,
     useConfig
 } from "wagmi"
-import { CakeABI, chainsToContracts } from "@/constants"
+import { CakeABI, chainsToContracts, allAddress } from "@/constants"
 import { CgSpinner } from "react-icons/cg"
 import InputForm from "./ui/InputField"
 
@@ -26,9 +26,9 @@ export default function NFTContractForm() {
     const chainId = useChainId()
 
     const cakeContractAddress = useMemo(() => {
-        if (contractAddress) return contractAddress
+        if (allAddress) return allAddress
         return (chainsToContracts[chainId]?.cakeNft as `0x${string}`) || null
-    }, [chainId, contractAddress])
+    }, [chainId, allAddress])
 
     const [tokenId, setTokenId] = useState("")
     const [myTokenIds, setMyTokenIds] = useState<string[]>([])
@@ -62,7 +62,7 @@ export default function NFTContractForm() {
         error: tokenURIError,
     } = useReadContract({
         abi: CakeABI,
-        address: cakeContractAddress as `0x${string}`,
+        address: allAddress as `0x${string}`,
         functionName: "tokenURI",
         args: [tokenId ? BigInt(tokenId) : undefined],
         query: {
@@ -75,7 +75,7 @@ export default function NFTContractForm() {
         try {
             const txHash = await writeBakeCakeAsync({
                 abi: CakeABI,
-                address: cakeContractAddress as `0x${string}`,
+                address: allAddress as `0x${string}`,
                 functionName: "bakeCake",
                 args: [],
             })

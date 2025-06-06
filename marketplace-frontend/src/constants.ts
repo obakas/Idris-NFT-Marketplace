@@ -7,6 +7,8 @@ interface ContractsConfig {
     }
 }
 
+export const allAddress = "0x8464135c8f25da09e49bc8782676a84730c318bc"
+
 export const chainsToContracts: ContractsConfig = {
     31337: {
         usdc: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
