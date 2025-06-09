@@ -3,6 +3,7 @@ import "./globals.css"
 import Header from "@/components/Header"
 import { type ReactNode } from "react"
 import { Providers } from "./providers"
+import { Toaster } from 'react-hot-toast'
 
 export const metadata: Metadata = {
     title: "NftMarketplace",
@@ -19,6 +20,7 @@ export default function RootLayout(props: { children: ReactNode }) {
                 <Providers>
                     <Header />
                     {props.children}
+                    <Toaster position="top-right" />
                 </Providers>
             </body>
         </html>

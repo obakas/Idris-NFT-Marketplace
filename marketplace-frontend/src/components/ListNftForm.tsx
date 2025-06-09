@@ -5,14 +5,17 @@ import { useState } from "react"
 import {
     useAccount,
     useChainId,
+    useConfig,
     useWriteContract,
     useReadContract,
     useWaitForTransactionReceipt,
 } from "wagmi"
 import { parseEther } from "viem"
-import { chainsToContracts, nftAbi, IdrisNftMarketplaceABI } from "@/constants"
+import { chainsToContracts, nftAbi, IdrisNftMarketplaceABI, cakeAddress } from "@/constants"
 import NFTBox from "@/components/NFTBox"
 import { addDecimalsToPrice } from "../utils/formatPrice"
+import { writeContract, readContract, waitForTransactionReceipt } from "@wagmi/core";
+import toast from "react-hot-toast";
 
 export default function ListNftForm() {
     const { address } = useAccount()
@@ -23,7 +26,12 @@ export default function ListNftForm() {
     const [nftAddress, setNftAddress] = useState("")
     const [tokenId, setTokenId] = useState("")
     const [price, setPrice] = useState("")
-    const [step, setStep] = useState(1) // 1: Form Input, 2: Preview, 3: Approval, 4: Listing
+    const [step, setStep] = useState(1) 
+    const config = useConfig();
+    const [isApprovingBalance, setIsApprovingBalance] = useState(false);
+    const [isListing, setIsListing] = useState(false);
+    // 1:
+    // Form Input, 2: Preview, 3: Approval, 4: Listing
 
     // For NFT owner verification
     const { data: ownerData } = useReadContract({
@@ -32,6 +40,12 @@ export default function ListNftForm() {
         functionName: "ownerOf",
         args: tokenId ? [BigInt(tokenId)] : undefined,
     })
+    // const { data: ownerData } = await readContract(config, {
+    //     abi: nftAbi,
+    //     address: nftAddress as `0x${string}`,
+    //     functionName: "ownerOf",
+    //     args: tokenId ? [BigInt(tokenId)] : undefined,
+    // })
 
     // For NFT approval
     const {
@@ -40,6 +54,17 @@ export default function ListNftForm() {
         writeContract: approveNft,
         error: approvalError,
     } = useWriteContract()
+    // const {
+    //     data: approvalHash,
+    //     isPending: isApprovalPending,
+    //     writeContract: approveNft,
+    //     error: approvalError,
+    // } = await writeContract(config, {
+    //     abi: nftAbi,
+    //     address: nftAddress as `0x${string}`,
+    //     functionName: "approve",
+    //     args: [marketplaceAddress, BigInt(tokenId)],
+    // })
 
     // For listing NFT
     const {
@@ -72,6 +97,9 @@ export default function ListNftForm() {
     // Handle form submission to proceed to preview
     const handlePreview = (e: React.FormEvent) => {
         e.preventDefault()
+        // if ( tokenId && price) {
+        //     setStep(2)
+        // }
         if (nftAddress && tokenId && price) {
             setStep(2)
         }
@@ -80,6 +108,8 @@ export default function ListNftForm() {
     // Handle approve NFT for marketplace
     const handleApprove = async () => {
         if (!nftAddress || !tokenId) return
+        setIsApprovingBalance(true);
+        const toastId = toast.loading("Approving...");
 
         try {
             await approveNft({
@@ -88,15 +118,27 @@ export default function ListNftForm() {
                 functionName: "approve",
                 args: [marketplaceAddress, BigInt(tokenId)],
             })
-            setStep(3)
+            toast.success("Approved successfully!", { id: toastId });
+            isApprovalSuccess;
+            handleList();
+            setStep(3);
         } catch (error) {
             console.error("Error approving NFT:", error)
+            const errorMessage =
+                error && typeof error === "object" && "message" in error
+                    ? (error as { message: string }).message
+                    : String(error);
+            toast.error(`Funding failed: ${errorMessage}`, { id: toastId });
+        } finally{
+            setIsApprovingBalance(false);
         }
     }
 
     // Handle list NFT
     const handleList = async () => {
         if (!nftAddress || !tokenId || !price) return
+        setIsListing(true)
+        const toastId = toast.loading("Listing NFT...");
 
         try {
             const formattedPrice = addDecimalsToPrice(price)
@@ -106,9 +148,13 @@ export default function ListNftForm() {
                 functionName: "listItem",
                 args: [nftAddress as `0x${string}`, BigInt(tokenId), formattedPrice],
             })
-            setStep(4)
+            isListingSuccess;
+            setStep(4);
+            toast.success("NFT listed successfully!");
         } catch (error) {
             console.error("Error listing NFT:", error)
+        } finally {
+            setIsListing(false);
         }
     }
 
@@ -120,7 +166,10 @@ export default function ListNftForm() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             NFT Contract Address
                         </label>
-                        <input
+                        {/* <label>
+                            value={nftAddress}
+                        </label> */}
+                            <input
                             type="text"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                             placeholder="0x..."
@@ -172,10 +221,13 @@ export default function ListNftForm() {
                     <h2 className="text-xl font-semibold">Preview Your Listing</h2>
 
                     {!isOwner ? (
-                        <div className="p-4 bg-red-50 text-red-700 rounded-md">
+                        <><div className="p-4 bg-red-50 text-red-700 rounded-md">
                             You don&apos;t own this NFT. Please make sure you entered the correct
                             contract address and token ID.
-                        </div>
+                        </div><button
+                                onClick={() => setStep(1)}
+                                className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            >Back</button></>
                     ) : (
                         <>
                             <div className="w-64 mx-auto">
@@ -239,9 +291,11 @@ export default function ListNftForm() {
                             </button>
 
                             {listingError && (
-                                <div className="p-4 bg-red-50 text-red-700 rounded-md mt-4">
+                                <><div className="p-4 bg-red-50 text-red-700 rounded-md mt-4">
                                     {listingError.message}
                                 </div>
+                                <button onClick={() => setStep(1)} 
+                                className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Back</button></>
                             )}
                         </>
                     ) : (
@@ -273,7 +327,7 @@ export default function ListNftForm() {
                             <div className="flex space-x-4">
                                 <button
                                     onClick={() => {
-                                        setNftAddress("")
+                                        // setNftAddress("")
                                         setTokenId("")
                                         setPrice("")
                                         setStep(1)

@@ -10,9 +10,11 @@ import {
     useReadContract,
     useConfig
 } from "wagmi"
-import { CakeABI, chainsToContracts, allAddress } from "@/constants"
+import { writeContract, readContract, waitForTransactionReceipt } from "@wagmi/core";
+import { CakeABI, chainsToContracts, allAddress, cakeAddress } from "@/constants"
 import { CgSpinner } from "react-icons/cg"
 import InputForm from "./ui/InputField"
+import toast from "react-hot-toast";
 
 // interface NFTContractFormProps {
 //     // If you want to pass a contract address directly (optional)
@@ -34,6 +36,7 @@ export default function NFTContractForm() {
     const [myTokenIds, setMyTokenIds] = useState<string[]>([])
     const [nftImageUrl, setNftImageUrl] = useState<string | null>(null)
     const [lastMintedTokenId, setLastMintedTokenId] = useState<string | null>(null)
+    const [isBaking, setIsBaking] = useState(false);
     const config = useConfig();
 
     // Contract writing for baking a cake (minting NFT)
@@ -62,7 +65,7 @@ export default function NFTContractForm() {
         error: tokenURIError,
     } = useReadContract({
         abi: CakeABI,
-        address: allAddress as `0x${string}`,
+        address: cakeAddress,
         functionName: "tokenURI",
         args: [tokenId ? BigInt(tokenId) : undefined],
         query: {
@@ -71,17 +74,39 @@ export default function NFTContractForm() {
     })
 
     // Function to bake a cake (mint NFT)
+    // async function handleBakeCake() {
+    //     try {
+    //         const txHash = await writeBakeCakeAsync({
+    //             abi: CakeABI,
+    //             address: allAddress as `0x${string}`,
+    //             functionName: "bakeCake",
+    //             args: [],
+    //         })
+    //         console.log("Bake cake transaction submitted:", txHash)
+    //     } catch (error) {
+    //         console.error("Error baking cake:", error)
+    //     }
+    // }
     async function handleBakeCake() {
+        setIsBaking(true);
+        const toastId = toast.loading("It is Baking...");
         try {
-            const txHash = await writeBakeCakeAsync({
+            const txHash = await writeContract(config, {
                 abi: CakeABI,
-                address: allAddress as `0x${string}`,
+                address: cakeAddress,
                 functionName: "bakeCake",
-                args: [],
+                // args: [],
+                chainId,
             })
+            await waitForTransactionReceipt(config, { hash: txHash });
+            toast.success("Baking complete!", { id: toastId });
             console.log("Bake cake transaction submitted:", txHash)
         } catch (error) {
-            console.error("Error baking cake:", error)
+            console.error("Error baking cake:", error);
+            const errorMessage = (error instanceof Error) ? error.message : String(error);
+            toast.error(`Baking failed: ${errorMessage}`, { id: toastId });
+        }finally {
+            setIsBaking(false);
         }
     }
 
@@ -196,7 +221,11 @@ export default function NFTContractForm() {
                         <div className="absolute w-full inset-0 mix-blend-overlay z-10 inner-shadow rounded-lg" />
                         {/* White inner border */}
                         <div className="absolute w-full inset-0 mix-blend-overlay z-10 border-[1.5px] border-white/20 rounded-lg" />
-                        {getBakeCakeButtonContent()}
+                        {isBaking ? (
+                            <ButtonLoader label="Its Baking" />
+                        ) : (
+                            getBakeCakeButtonContent()
+                        )}
                     </button>
 
                     {lastMintedTokenId && (
@@ -240,6 +269,9 @@ export default function NFTContractForm() {
                             <p className="text-sm text-zinc-500 mt-2 text-center">
                                 NFT #{tokenId}
                             </p>
+                            <p className="text-sm text-zinc-500 mt-2 text-center">
+                                {cakeContractAddress}
+                            </p>
                         </div>
                     )}
 
@@ -255,4 +287,51 @@ export default function NFTContractForm() {
             </div>
         </div>
     )
+}
+
+// Reusable components
+const ButtonLoader = ({ label }: { label: string }) => (
+    <span className="flex items-center justify-center gap-2">
+        <Spinner /> {label}
+    </span>
+);
+
+function Spinner() {
+    return (
+        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+            <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+            ></circle>
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            ></path>
+        </svg>
+    );
+}
+
+function MiniSpinner() {
+    return (
+        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24">
+            <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="8"
+                stroke="currentColor"
+                strokeWidth="3"
+            ></circle>
+            <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            ></path>
+        </svg>
+    );
 }

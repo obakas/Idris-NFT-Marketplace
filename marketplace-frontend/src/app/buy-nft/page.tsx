@@ -11,7 +11,7 @@ import {
     useWaitForTransactionReceipt,
 } from "wagmi"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
-import { chainsToContracts, erc20Abi, marketplaceAbi } from "@/constants"
+import { chainsToContracts, IdrisTokenABI, IdrisNftMarketplaceABI } from "@/constants"
 import NFTBox from "@/components/NFTBox"
 
 export default function BuyNftPage() {
@@ -36,12 +36,13 @@ export default function BuyNftPage() {
 
     // Get the listing details
     const { data: listingData, isLoading: isListingLoading } = useReadContract({
-        abi: marketplaceAbi,
+        abi: IdrisNftMarketplaceABI,
         address: marketplaceAddress,
         functionName: "getListing",
-        args: [contractAddress as `0x${string}`, BigInt(tokenId)],
+        args: [contractAddress as `0x${string}`, tokenId],
     })
 
+    // BigInt(tokenId)
     // Destructure listing data if available
     const listing = listingData as Listing | undefined
     const price = listing ? listing.price.toString() : "0"
@@ -81,7 +82,7 @@ export default function BuyNftPage() {
 
         try {
             await approveToken({
-                abi: erc20Abi,
+                abi: IdrisTokenABI,
                 address: usdcAddress,
                 functionName: "approve",
                 args: [marketplaceAddress, BigInt(price)],
@@ -96,7 +97,7 @@ export default function BuyNftPage() {
     const handleBuy = async () => {
         try {
             await buyNft({
-                abi: marketplaceAbi,
+                abi: IdrisNftMarketplaceABI,
                 address: marketplaceAddress,
                 functionName: "buyItem",
                 args: [contractAddress as `0x${string}`, BigInt(tokenId)],

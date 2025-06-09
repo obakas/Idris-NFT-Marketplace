@@ -3,6 +3,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { FaGithub } from "react-icons/fa"
 import Image from "next/image"
+import ListNftForm from "./ListNftForm"
 
 export default function Header() {
     return (
@@ -34,7 +35,17 @@ export default function Header() {
             </h3>
             <a href="/cake-nft" className="flex items-center gap-1 text-zinc-800">
                 <h1 className="flex items-center justify-center gap-1 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-md shadow-sm transition-colors duration-200 border border-zinc-300">
-                    Cake NFT
+                    Mint NFT
+                </h1>
+            </a>
+            <a href="/list-nft" className="flex items-center gap-1 text-zinc-800">
+                <h1 className="flex items-center justify-center gap-1 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-md shadow-sm transition-colors duration-200 border border-zinc-300">
+                    List NFT for Sale
+                </h1>
+            </a>
+            <a href="/buy-nft" className="flex items-center gap-1 text-zinc-800">
+                <h1 className="flex items-center justify-center gap-1 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-md shadow-sm transition-colors duration-200 border border-zinc-300">
+                    Buy NFT
                 </h1>
             </a>
             <div className="flex items-center gap-4">
