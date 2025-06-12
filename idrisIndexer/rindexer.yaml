@@ -1,4 +1,4 @@
-name: IdrisMaketplace
+name: idrisIndexer
 project_type: no-code
 networks:
 - name: anvil

@@ -11,10 +11,9 @@ import {
     useWaitForTransactionReceipt,
 } from "wagmi"
 import { parseEther } from "viem"
-import { chainsToContracts, nftAbi, IdrisNftMarketplaceABI, cakeAddress } from "@/constants"
+import { chainsToContracts, nftAbi, IdrisNftMarketplaceABI } from "@/constants"
 import NFTBox from "@/components/NFTBox"
 import { addDecimalsToPrice } from "../utils/formatPrice"
-import { writeContract, readContract, waitForTransactionReceipt } from "@wagmi/core";
 import toast from "react-hot-toast";
 
 export default function ListNftForm() {
